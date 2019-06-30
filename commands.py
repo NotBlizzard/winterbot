@@ -1,44 +1,79 @@
 import json
 import re
 import random
+import time
+import subprocess
 
 
-def permission(user, rank):
+def permission(rank):
+    def wrap_(function):
+        def wrapper(*args):
+            try:
+                permissions = json.loads(open("./permissions.json", "r").read())
+                user = args[2]
+                if int(permissions[user]) >= rank:
+                    return function(*args)
+
+            except FileNotFoundError:
+                open("./permissions.json", "w+").write("{}")
+                return False
+            except KeyError:
+                if rank == 1:
+                    return function(*args)
+                else:
+                    return False
+            finally:
+                pass
+        return wrapper
+
+    return wrap_
+
+
+@permission(3)
+def command_pick(args, room, user, bot):
+    return random.choice(args)
+
+
+@permission(4)
+def command_say(args, room, user, bot):
+    return ' '.join(args)
+
+
+@permission(1)
+def command_random(args, room, user, bot):
+    return "4 // chosen by a fair dice roll"
+
+
+@permission(4)
+def command_node(args, room, user, bot):
+    node = subprocess.getoutput("node -e \"console.log({})\"".format(' '.join(args)))
+    node = re.sub(r'\n', '', node)
+    return node
+
+
+@permission(4)
+def command_setrank(args, room, user, bot):
+    old_data = json.loads(open("./permissions.json", "r").read())
+    data = open("./permissions.json", "w+")
+    old_data[args[0]] = args[1]
+    data.write(json.dumps(old_data))
+    return "Ranks updated."
+
+
+@permission(4)
+def command_hotpatch(args, room, user, bot):
+    return bot.hotpatch(args[0])
+
+
+@permission(4)
+def command_eval(args, room, user, bot):
     try:
-        permissions = json.loads(open("./permissions.json", "r").read())
-        user = re.sub(r"[^A-z0-9]", "", user).lower()
-        return int(permissions[user]) >= rank
-    except FileNotFoundError:
-        open("./permissions.json", "w+").write("{}")
-    except KeyError:
-        return False
-    finally:
+        if room[0:6] == "battle":
+            battle = bot.battles[room]
+            exec("self=battle;result={}".format(" ".join(args)), locals(), globals())
+        else:
+            exec("self=bot;result={}".format(" ".join(args)), locals(), globals())
+
+        return result
+    except:
         pass
-
-
-def command_random(args, user, room, ws):
-    if permission(user, 3):
-        ws.send("{}|{}".format(room, random.choice(args)))
-
-
-def command_setrank(args, user, room, ws):
-    if permission(user, 4):
-        old_data = json.loads(open("./permissions.json", "r").read())
-        data = open("./permissions.json", "w+")
-        old_data[args[0]] = args[1]
-        data.write(json.dumps(old_data))
-        ws.send("{}|{}".format(room, "Ranks updated."))
-        
-
-def command_eval(args, user, room, ws, bot):
-    if permission(user, 4):
-        try:
-            if room[0:6] == "battle":
-                battle = bot.battles[room]
-                exec("self=battle;result={}".format(" ".join(args)), locals(), globals())
-                ws.send("{}|{}".format(room, result))
-            else:
-                exec("self=bot;result={}".format(" ".join(args)), locals(), globals())
-                ws.send("{}|{}".format(room, result))
-        except:
-            pass

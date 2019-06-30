@@ -10,9 +10,9 @@ data.read("config.ini")
 files = data["FILES"]
 
 
-class Logic():
+class Logic:
     """Logic of the Pokemon battles.
-       etc. switching, attacking
+       etc. switching, attacking.
     """
     def __init__(self, team, _id, room):
         self.team = team

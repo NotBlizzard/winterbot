@@ -2,8 +2,8 @@ import json
 from logic import Logic
 
 
-class Battles():
-
+class Battles:
+    # Battles of Pokemon Showdown.
     def __init__(self, data, room, ws):
         self.data = json.loads(data)
         self.team = self.data["side"]["pokemon"]
