@@ -3,7 +3,8 @@ import re
 import random
 import time
 import subprocess
-
+import platform
+import humanize
 
 def permission(rank):
     def wrap_(function):
@@ -64,6 +65,13 @@ def command_setrank(args, room, user, bot):
 def command_hotpatch(args, room, user, bot):
     return bot.hotpatch(args[0])
 
+@permission(1)
+def command_pythonversion(args, room, user, bot):
+    return platform.python_version()
+
+@permission(1)
+def command_uptime(args, room, user, bot):
+    return humanize.naturaltime(time.time() - bot.starttime)[:-4]
 
 @permission(4)
 def command_eval(args, room, user, bot):

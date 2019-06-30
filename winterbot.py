@@ -19,6 +19,7 @@ class WinterBot:
         self.ws_url = ws_url
         self.avatar = avatar
         self.room = ""
+        self.starttime = 0
         self.timestamp = 0
         self.ws = websocket.WebSocket()
         self.battles = {}
@@ -31,6 +32,7 @@ class WinterBot:
         login = "https://play.pokemonshowdown.com/action.php"
         data = json.loads(requests.post(login, data=login_data).content[1:])
         self.send("/trn {},0,{}".format(self.username, data["assertion"]))
+        self.starttime = time.time() # uptime
         self.timestamp = time.time()
         # prevent old messages from using commands
         self.join(self.rooms)
