@@ -52,13 +52,18 @@ class WinterBot:
         """Use getattr to run the command from commands.py"""
         try:
             command = getattr(commands, "command_{}".format(bot_command))
+
             command_ = command(args, self.room, user, self)
+
+            if command_ is False:
+                return False
             if pm:
                 self.send_pm(user, command_)
             else:
                 self.send(command_, self.room)
+
         except:
-            raise
+            pass
 
     def send(self, message, room=""):
         self.ws.send("{}|{}".format(room, message))
@@ -83,7 +88,6 @@ class WinterBot:
     def join(self, rooms):
         for room in rooms:
             self.send("/join {}".format(room))
-
 
     def hotpatch(self, file):
         reloads = {"commands": commands, "battles": battles}

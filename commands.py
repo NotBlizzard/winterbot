@@ -6,12 +6,17 @@ import subprocess
 import platform
 import humanize
 
+
 def permission(rank):
     def wrap_(function):
         def wrapper(*args):
             try:
                 permissions = json.loads(open("./permissions.json", "r").read())
                 user = args[2]
+
+                if int(permissions[user]) == 0:
+                    return False
+
                 if int(permissions[user]) >= rank:
                     return function(*args)
 
@@ -30,7 +35,7 @@ def permission(rank):
     return wrap_
 
 
-@permission(3)
+@permission(1)
 def command_pick(args, room, user, bot):
     return random.choice(args)
 
@@ -54,6 +59,9 @@ def command_node(args, room, user, bot):
 
 @permission(4)
 def command_setrank(args, room, user, bot):
+    if int(args[1]) > 4 or int(args[1]) < 0:
+        return "Rank cannot be more than 4, and less than 0."
+
     old_data = json.loads(open("./permissions.json", "r").read())
     data = open("./permissions.json", "w+")
     old_data[args[0]] = args[1]
@@ -81,7 +89,6 @@ def command_eval(args, room, user, bot):
             exec("self=battle;result={}".format(" ".join(args)), locals(), globals())
         else:
             exec("self=bot;result={}".format(" ".join(args)), locals(), globals())
-
         return result
     except:
         pass
