@@ -5,13 +5,15 @@ import time
 import subprocess
 import platform
 import humanize
+import os
+import sys
 
 
 def permission(rank):
     def wrap_(function):
         def wrapper(*args):
             try:
-                permissions = json.loads(open("./permissions.json", "r").read())
+                permissions = json.loads(open("permissions.json", "r").read())
                 user = args[2]
 
                 if int(permissions[user]) == 0:
@@ -21,7 +23,7 @@ def permission(rank):
                     return function(*args)
 
             except FileNotFoundError:
-                open("./permissions.json", "w+").write("{}")
+                open("permissions.json", "w").write("{}")
                 return False
             except KeyError:
                 if rank == 1:
@@ -52,7 +54,7 @@ def command_random(args, room, user, bot):
 
 @permission(4)
 def command_node(args, room, user, bot):
-    node = subprocess.getoutput("node -e \"console.log({})\"".format(' '.join(args)))
+    node = subprocess.getoutput(f"node -e \"console.log({' '.join(args)})\"")
     node = re.sub(r'\n', '', node)
     return node
 
@@ -63,7 +65,7 @@ def command_setrank(args, room, user, bot):
         return "Rank cannot be more than 4, and less than 0."
 
     old_data = json.loads(open("./permissions.json", "r").read())
-    data = open("./permissions.json", "w+")
+    data = open("permissions.json", "w")
     old_data[args[0]] = args[1]
     data.write(json.dumps(old_data))
     return "Ranks updated."
@@ -84,11 +86,14 @@ def command_uptime(args, room, user, bot):
 @permission(4)
 def command_eval(args, room, user, bot):
     try:
-        if room[0:6] == "battle":
+        battle_room = True if room[0:6] == "battle" else False
+
+        if battle_room:
             battle = bot.battles[room]
-            exec("self=battle;result={}".format(" ".join(args)), locals(), globals())
+            exec(f"self=battle;result={' '.join(args)}", locals(), globals())
         else:
-            exec("self=bot;result={}".format(" ".join(args)), locals(), globals())
+            exec(f"self=bot;result={' '.join(args)}", locals(), globals())
+
         return result
-    except:
-        pass
+    except Exception as e:
+        print(e)

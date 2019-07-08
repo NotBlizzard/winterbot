@@ -7,32 +7,35 @@ import configparser
 
 data = configparser.ConfigParser()
 data.read("config.ini")
-files = data["FILES"]
+files = data["POKEMON"]
 
 
 class Logic:
     """Logic of the Pokemon battles.
        etc. switching, attacking.
     """
-    def __init__(self, team, _id, room):
+    def __init__(self, team, _id, room, ws):
         self.team = team
         self.id = _id
         self.room = room
-        self.moves = json.loads(open(files["MOVES"], "r").read().lower())
-        self.pokedex = json.loads(open(files["POKEDEX"], "r").read().lower())
-        self.typechart = json.loads(open(files["TYPECHART"], "r").read().lower())
+        self.ws = ws
+        self.moves = json.loads(open(files["moves"], "r").read().lower())
+        self.pokedex = json.loads(open(files["pokedex"], "r").read().lower())
+        self.typechart = json.loads(open(files["typechart"], "r").read().lower())
         self.active_pokemon_moves = None
         self.status_move_usable = False  # toxic, thunderwave, etc.
         self.opponent_pokemon_status = {}
         self.active_pokemon = None
         self.opponent_pokemon = None
         self.best = ""
-        self.best_choice_band_move = ""
+        # choice items: choice band, choice scarf, choice specs.
+        self.choice_band = ""
 
     def __str__(self):
-        return "<WinterBot Logic>"
+        return f"<WinterBot: Logic {self.room}>"
 
     def organize_moves(self):
+
         self.team[self.active_pokemon]["moves"] = [sub(r'[^A-Za-z]', '', x).lower() for x in self.team[self.active_pokemon]["moves"]]
         moves = [{"name": x, "type": self.moves[x]["type"], "dmg": self.moves[x]["basepower"]} for x in self.team[self.active_pokemon]["moves"]]
 
@@ -83,39 +86,47 @@ class Logic:
 
         return weaknesses
 
-    def get_if_use_status(self):
+    def get_opponent_pokemon_status(self):
         # get status effect of opponent pokemon
         if self.opponent_pokemon not in self.opponent_pokemon_status:
             if self.status_move_usable:
                 self.best = [x for x in self.active_pokemon_moves if "status" in x.keys()][0]["name"]
                 return True
+        else:
+            return False
 
-        return False
+    def swap(self):
+        self.team[self.active_pokemon]["fainted"] = True
 
-    def logic(self, active_pokemon, opponent_pokemon, ws, action):
+        self.choice_band = ""
+        for pokemon in self.team:
+            if not self.team[pokemon]["fainted"]:
+                # swap to the first non-fainted pokemon in team
+                self.team[pokemon]["active"] = True
+                return self.ws.send(f"{self.room}|/switch {pokemon}")
+
+    def new_move(self):
+        new_move = random.choice(self.team[self.active_pokemon]["moves"])
+        return self.ws.send(f"{self.room}|/move {new_move}")
+
+    def start(self, active_pokemon, opponent_pokemon, action=None):
         self.active_pokemon = active_pokemon
         self.opponent_pokemon = opponent_pokemon
+
         if self.opponent_pokemon is None:
             return True
 
         if action == "swap":
-            self.team[self.active_pokemon]["fainted"] = True
+            return self.swap()
 
-            self.best_choice_band_move = ""
-            for pokemon in self.team:
-                if not self.team[pokemon]["fainted"]:
-                    # swap to the first non-fainted pokemon in team
-                    self.team[pokemon]["active"] = True
-                    return ws.send("{}|/switch {}".format(self.room, pokemon))
+        elif action == "new move":
+            return self.new_move()
 
-        if self.best_choice_band_move != "":
-            return ws.send("{}|/move {}".format(self.room, self.best_choice_band_move))
-
-        if action in ["tox", "brn", "slp", "par"]:
+        elif action in ["tox", "brn", "slp", "par"]:
             self.opponent_pokemon_status[self.opponent_pokemon] = action
 
-        if action == "new move":  # hydro pump
-            return ws.send("{}|/move {}".format(self.room, random.choice(self.team[self.active_pokemon]["moves"])))
+        if self.choice_band != "":
+            return self.ws.send(f"{self.room}|/move {self.choice_band}")
 
         self.active_pokemon_moves = self.organize_moves()
         self.active_pokemon_moves.sort(key=lambda x: x["dmg"], reverse=True)
@@ -125,8 +136,8 @@ class Logic:
             if x["name"] in ["toxic", "willowisp", "thunderwave", "sleeppowder"]:
                 self.status_move_usable = True
 
-        if self.get_if_use_status():
-            return ws.send("{}|/move {}".format(self.room, self.best))
+        if self.get_opponent_pokemon_status():
+            return self.ws.send(f"{self.room}|/move {self.best}")
 
         weaknesses = self.get_type_effectiveness(self.opponent_pokemon_type)
 
@@ -142,7 +153,7 @@ class Logic:
 
         self.best = max(w_, key=lambda x: w_[x])
 
-        if "choice" in self.team[self.active_pokemon]["item"] and self.best_choice_band_move == "":
-            self.best_choice_band_move = self.best
+        if "choice" in self.team[self.active_pokemon]["item"] and self.choice_band == "":
+            self.choice_band = self.best
 
-        return ws.send("{}|/move {}".format(self.room, self.best))
+        return self.ws.send(f"{self.room}|/move {self.best}")
