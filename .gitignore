@@ -107,7 +107,6 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-/data
 /.vscode
 permissions.json
 config.ini
