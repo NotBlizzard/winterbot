@@ -3,6 +3,7 @@ import requests
 import json
 import time
 import re
+import os
 
 import commands
 import battles
@@ -131,9 +132,11 @@ class WinterBot:
                     self.battle_accept(message[2])
 
                 elif message[1] == "request":
-                    if len(message[2]) > 0:
-                        if self.room not in list(self.battles.keys()):
-                            self.battles[self.room] = battles.Battles(message[2], self.room, self.ws)
+                    if os.path.exists("data/pokedex.json"):
+                        # make sure the data exists before accepting the battle
+                        if len(message[2]) > 0:
+                            if self.room not in list(self.battles.keys()):
+                                self.battles[self.room] = battles.Battles(message[2], self.room, self.ws)
 
                 elif message[1] == "pm":
                     user = self.parse_user(message[2])
