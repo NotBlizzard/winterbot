@@ -10,7 +10,7 @@ import battles
 from importlib import reload
 
 
-class WinterBot:
+class Bot:
 
     def __init__(self, username, password, rooms, key, ws_url, avatar):
         self.username = username
@@ -27,7 +27,7 @@ class WinterBot:
         self.teams = open("./data/teams.txt", "r").read().lower()
 
     def __str__(self):
-        return "<WinterBot: Main>"
+        return f"<CorviknightBot: Main>"
 
     def login(self, challstr):
         login_data = {"act": "login", "name": self.username, "pass": self.password, "challstr": challstr}
@@ -101,7 +101,7 @@ class WinterBot:
             return "Error."
 
     def connect(self):
-        self.ws.connect(self.ws_url)
+        self.ws.connect(f"ws://{self.ws_url}/showdown/websocket")
 
         while True:
             messages = self.ws.recv().split("\n")

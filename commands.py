@@ -6,6 +6,7 @@ import subprocess
 import platform
 import humanize
 import os
+import requests
 import sys
 
 
@@ -41,15 +42,14 @@ def permission(rank):
 def command_pick(args, room, user, bot):
     return random.choice(args)
 
+@permission(1)
+def command_dadjoke(args, room, user, bot):
+    data = requests.get("https://icanhazdadjoke.com", headers={"Accept": "application/json"})
+    return data.json()["joke"]
 
 @permission(4)
 def command_say(args, room, user, bot):
     return ' '.join(args)
-
-
-@permission(1)
-def command_random(args, room, user, bot):
-    return "4 // chosen by a fair dice roll"
 
 
 @permission(4)

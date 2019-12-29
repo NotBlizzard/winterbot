@@ -32,7 +32,7 @@ class Logic:
         self.choice_band = ""
 
     def __str__(self):
-        return f"<WinterBot: Logic {self.room}>"
+        return f"<CorviKnight: Logic {self.room}>"
 
     def organize_moves(self):
 

@@ -19,7 +19,7 @@ class Battles:
         self.ws.send(f"{self.room}|GLHF.")
 
     def __str__(self):
-        return "<WinterBot: Battle {self.room}>"
+        return f"<CorviknightBot: Battle {self.room}>"
 
     def organize_team(self):
         team = {}

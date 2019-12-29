@@ -110,4 +110,5 @@ venv.bak/
 /.vscode
 permissions.json
 config.ini
+teams.txt
 
