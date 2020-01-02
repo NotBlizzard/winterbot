@@ -47,6 +47,11 @@ def command_dadjoke(args, room, user, bot):
     data = requests.get("https://icanhazdadjoke.com", headers={"Accept": "application/json"})
     return data.json()["joke"]
 
+@permission(1)
+def command_catfact(args, room, user, bot):
+    data = requests.get("https://cat-fact.herokuapp.com/facts")
+    return random.choice(data.json()["all"])["text"]
+
 @permission(4)
 def command_say(args, room, user, bot):
     return ' '.join(args)
