@@ -98,6 +98,11 @@ def command_define(args, room, user, bot):
     data_ = requests.get(f"https://owlbot.info/api/v3/dictionary/{args[0]}", headers={"Authorization": f"Token {data['owlbot']}"})
     return data_.json()['definitions'][0]['definition']
 
+@permission(1)
+def command_randompokemon(args, room, user, bot):
+    dex = json.loads(open("./data/pokedex.json", "r").read())
+    return dex[random.choice(list(dex.keys()))]["species"]
+
 @permission(4)
 def command_eval(args, room, user, bot):
     try:
