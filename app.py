@@ -1,10 +1,9 @@
 import configparser
-import os
 import sys
-from bot import Bot
 import asyncio
 from dotenv import load_dotenv
 import os
+from bot import Bot
 
 load_dotenv()
 
@@ -12,6 +11,7 @@ if not os.path.exists("permissions.json"):
     print("permissions.json does not exist. making permissions.json.")
     with open("permissions.json", "w") as file:
         file.write("{}")
+
 
 if not os.path.exists(".env"):
     print(".env does not exist.")
