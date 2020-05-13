@@ -7,10 +7,7 @@ import platform
 import humanize
 import requests
 import configparser
-
-data = configparser.ConfigParser()
-data.read("config.ini")
-data = data["AUTHORIZATION"]
+import os
 
 
 def permission(rank):
@@ -100,7 +97,7 @@ def command_uptime(args, room, user, bot):
 
 @permission(1)
 def command_define(args, room, user, bot):
-    headers = {"Authorization": f"Token {data['owlbot']}"}
+    headers = {"Authorization": f"Token {os.getenv('OWLBOT')}"}
     url = f"https://owlbot.info/api/v3/dictionary/{args[0]}"
     data_ = requests.get(url, headers=headers)
     return data_.json()['definitions'][0]['definition']
