@@ -1,4 +1,12 @@
 # Corviknight
 
-PokemonShowdown bot written in Python.
-Requires Python3.7.
+PokemonShowdown bot written in Python.\
+Requires Python 3.7+
+
+## Install
+
+The following packages are needed: \
+`websockets` \
+`python-dotenv`\
+`humanize`\
+`requests`
