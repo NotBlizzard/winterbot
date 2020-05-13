@@ -6,7 +6,6 @@ import subprocess
 import platform
 import humanize
 import requests
-import configparser
 import os
 
 
