@@ -1,17 +1,14 @@
-import websocket
+import websockets
 import requests
 import json
 import time
 import re
-import os
-
+# import asyncio
 import commands
-import battles
 from importlib import reload
 
 
 class Bot:
-
     def __init__(self, username, password, rooms, key, ws_url, avatar):
         self.username = username
         self.password = password
@@ -22,132 +19,111 @@ class Bot:
         self.room = ""
         self.starttime = 0
         self.timestamp = 0
-        self.ws = websocket.WebSocket()
-        self.battles = {}
-        self.teams = open("./data/teams.txt", "r").read().lower()
 
     def __str__(self):
-        return f"<CorviknightBot: Main>"
+        return f"<{self.username}>"
 
-    def login(self, challstr):
-        login_data = {"act": "login", "name": self.username, "pass": self.password, "challstr": challstr}
-        login = "https://play.pokemonshowdown.com/action.php"
-        data = json.loads(requests.post(login, data=login_data).content[1:])
-        self.send(f"/trn {self.username},0,{data['assertion']}")
+    async def login(self, challstr):
+        login_data = {
+            "act": "login",
+            "name": self.username,
+            "pass": self.password,
+            "challstr": challstr
+        }
+        login_url = "https://play.pokemonshowdown.com/action.php"
+        data = requests.post(login_url, data=login_data).content[1:]
+        data = json.loads(data)
+        await self.send_message(f"/trn {self.username},0,{data['assertion']}")
         self.starttime = time.time()  # uptime
         self.timestamp = time.time()
         # prevent old messages from using commands
-        self.join(self.rooms)
-        self.send(f"/avatar {self.avatar}")
+        await self.join(self.rooms)
+        await self.send_message(f"/avatar {self.avatar}")
 
-    def parse(self, user, message, battle=False, time_message=False, room=False, pm=False):
+    async def parse_message(self, user, message, timestamp):
         """Parse the message to see if the message has a command."""
         if user == self.username:
             return False
 
-        message = message.split(" ")
+        message = message.split()
+        bot_command = message[0][1:]
+        args = message[1:]
+        key = message[0][0]
 
-        if pm:
-            self.command(user, message[0][1:], message[1:], pm=True)
-        elif (self.timestamp < int(time_message) and message[0][0] == self.key) or (battle and message[0][0] == self.key):
-            self.command(user.strip(), message[0][1:], message[1:])
+        if (self.timestamp < int(timestamp)) and key == self.key:
+            user = user.strip()
+            await self.command(user, bot_command, args)
 
-    def command(self, user, bot_command, args, pm=False):
+    async def parse_private_message(self, user, message):
+        if user == self.username:
+            return False
+
+        message = message.split()
+        bot_command = message[0][1:]
+        args = message[1:]
+        await self.command(user, bot_command, args, pm=True)
+
+    async def command(self, user, bot_command, args, pm=False):
         """Use getattr to run the command from commands.py"""
-        try:
-            if hasattr(commands, f"command_{bot_command}"):
-                command = getattr(commands, f"command_{bot_command}")
-                command_ = command(args, self.room, user, self)
 
-                if command_ is False:
-                    return False
-                if pm:
-                    self.send_pm(user, command_)
-                else:
-                    self.send(command_, self.room)
-        except:
-            pass
+        if hasattr(commands, f"command_{bot_command}"):
+            command_name = getattr(commands, f"command_{bot_command}")
+            command = command_name(args, self.room, user, self)
 
-    def send(self, message, room=""):
-        self.ws.send(f"{room}|{message}")
+            if command is False:
+                return False
 
-    def send_pm(self, user, message):
-        self.ws.send(f"|/pm {user}, {message}")
+            if not pm:
+                await self.send_message(command)
+            else:
+                await self.send_private_message(command, user)
+
+    async def send_message(self, message):
+        await self.ws.send(f"{self.room}|{message}")
+
+    async def send_private_message(self, message, user):
+        await self.ws.send(f"|/pm {user}, {message}")
+
+    async def join(self, rooms):
+        for room in rooms:
+            await self.send_message(f"/join {room}")
 
     def parse_user(self, user):
-        user = re.sub(r'[^A-Za-z]', "", user)
-        return user
-
-    def battle_accept(self, data):
-        data = json.loads(data)
-        if data["challengesFrom"] == {}:
-            return False
-        else:
-
-            user = list(data["challengesFrom"].keys())[0].strip()
-            self.send(f"/utm {self.teams}")
-            self.send(f"/accept {user}")
-
-    def join(self, rooms):
-        for room in rooms:
-            self.send(f"/join {room}")
+        return re.sub(r'[^A-Za-z]', "", user)
 
     def hotpatch(self, file):
-        reloads = {"commands": commands, "battles": battles}
-        try:
-            reload(reloads[file])
-            return "Hotpatch successful."
-        except:
-            return "Error."
+        reloads = {"commands": commands}
+        reload(reloads[file])
+        return "Hotpatch successful."
 
-    def connect(self):
-        self.ws.connect(f"ws://{self.ws_url}/showdown/websocket")
+    async def connect(self):
+        ws_url = f"ws://{self.ws_url}/showdown/websocket"
+        async with websockets.connect(ws_url) as websocket:
+            while True:
+                self.ws = websocket
+                messages = (await self.ws.recv()).split("\n")
+                for message in messages:
+                    print(message)
+                    message = message.split("|")
+                    message[0] = message[0].strip()
 
-        while True:
-            messages = self.ws.recv().split("\n")
-            for message in messages:
+                    if len(message) <= 1:
+                        message.append("")
 
-                print(message)
-                message = message.split("|")
-                message[0] = message[0].strip()
+                    if len(message[0]) > 0 and message[0][0] == ">":
+                        self.room = message[0][1:]
 
-                if len(message) <= 1:
-                    message.append("")
+                    if message[1] == "challstr":
+                        await self.login("|".join(message[2:]))
 
-                if len(message[0]) > 0 and message[0][0] == ">":
-                    self.room = message[0][1:]
+                    elif message[1] == "c:":
+                        user = self.parse_user(message[3])
+                        await self.parse_message(user, message[4], message[2])
 
-                if message[1] == "challstr":
-                    self.login("|".join(message[2:]))
+                    elif message[1] == "pm":
+                        user = self.parse_user(message[2])
+                        if user != self.username:
+                            await self.parse_private_message(user, message[4])
 
-                elif message[1] == "c":
-                    user = self.parse_user(message[2])
-                    self.parse(user, message[3], room=self.room, battle=True)
-
-                elif message[1] == "c:":
-                    user = self.parse_user(message[3])
-                    self.parse(user, message[4], room=self.room, time_message=message[2])
-
-                elif message[1] == "updatechallenges":
-                    self.battle_accept(message[2])
-
-                elif message[1] == "request":
-                    if os.path.exists("data/pokedex.json"):
-                        # make sure the data exists before accepting the battle
-                        if len(message[2]) > 0:
-                            if self.room not in list(self.battles.keys()):
-                                self.battles[self.room] = battles.Battles(message[2], self.room, self.ws)
-
-                elif message[1] == "pm":
-                    user = self.parse_user(message[2])
-                    if user != self.username:
-                        self.parse(user, message[4], pm=True)
-
-                elif message[1] == "init":
-                    if message[2] == "chat":
-                        # when the bot joins a new room,
-                        # the bot won't spam chat with commands.
+                    elif message[1] == "init" and message[2] == "chat":
                         self.timestamp = time.time()
-
-                if self.room in self.battles.keys():
-                    self.battles[self.room].start(message, self.ws)

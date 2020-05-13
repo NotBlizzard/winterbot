@@ -5,9 +5,7 @@ import time
 import subprocess
 import platform
 import humanize
-import os
 import requests
-import sys
 import configparser
 
 data = configparser.ConfigParser()
@@ -47,15 +45,19 @@ def permission(rank):
 def command_pick(args, room, user, bot):
     return random.choice(args)
 
+
 @permission(1)
 def command_dadjoke(args, room, user, bot):
-    data = requests.get("https://icanhazdadjoke.com", headers={"Accept": "application/json"})
+    headers = {"Accept": "application/json"}
+    data = requests.get("https://icanhazdadjoke.com", headers=headers)
     return data.json()["joke"]
+
 
 @permission(1)
 def command_catfact(args, room, user, bot):
     data = requests.get("https://cat-fact.herokuapp.com/facts")
     return random.choice(data.json()["all"])["text"]
+
 
 @permission(4)
 def command_say(args, room, user, bot):
@@ -85,35 +87,36 @@ def command_setrank(args, room, user, bot):
 def command_hotpatch(args, room, user, bot):
     return bot.hotpatch(args[0])
 
+
 @permission(1)
 def command_pythonversion(args, room, user, bot):
     return platform.python_version()
+
 
 @permission(1)
 def command_uptime(args, room, user, bot):
     return humanize.naturaltime(time.time() - bot.starttime)[:-4]
 
+
 @permission(1)
 def command_define(args, room, user, bot):
-    data_ = requests.get(f"https://owlbot.info/api/v3/dictionary/{args[0]}", headers={"Authorization": f"Token {data['owlbot']}"})
+    headers = {"Authorization": f"Token {data['owlbot']}"}
+    url = f"https://owlbot.info/api/v3/dictionary/{args[0]}"
+    data_ = requests.get(url, headers=headers)
     return data_.json()['definitions'][0]['definition']
+
 
 @permission(1)
 def command_randompokemon(args, room, user, bot):
     dex = json.loads(open("./data/pokedex.json", "r").read())
     return dex[random.choice(list(dex.keys()))]["species"]
 
+
 @permission(4)
 def command_eval(args, room, user, bot):
     try:
-        battle_room = True if room[0:6] == "battle" else False
-
-        if battle_room:
-            battle = bot.battles[room]
-            exec(f"self=battle;result={' '.join(args)}", locals(), globals())
-        else:
-            exec(f"self=bot;result={' '.join(args)}", locals(), globals())
-
-        return result
+        locals_ = locals()
+        exec(f"self=bot;result={' '.join(args)}", globals(), locals_)
+        return locals_["result"]
     except Exception as e:
         print(e)
