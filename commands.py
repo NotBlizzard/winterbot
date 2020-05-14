@@ -60,6 +60,14 @@ def command_say(args, room, user, bot):
     return ' '.join(args)
 
 
+@permission(1)
+def command_owo(args, room, user, bot):
+    args = " ".join(args)
+    args = re.sub(r'(r|l|w)', "w", args)
+    args = re.sub(r'n(?=a|e|i|o|u)', "ny", args)
+    return args
+
+
 @permission(4)
 def command_node(args, room, user, bot):
     node = subprocess.getoutput(f"node -e \"console.log({' '.join(args)})\"")
