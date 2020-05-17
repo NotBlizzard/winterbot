@@ -10,7 +10,7 @@ import os
 
 
 def permission(rank):
-    def wrap_(function):
+    def wrap(function):
         def wrapper(*args):
             try:
                 permissions = json.loads(open("permissions.json", "r").read())
@@ -33,8 +33,7 @@ def permission(rank):
             finally:
                 pass
         return wrapper
-
-    return wrap_
+    return wrap
 
 
 @permission(1)
@@ -77,7 +76,7 @@ def command_node(args, room, user, bot):
 
 @permission(4)
 def command_setrank(args, room, user, bot):
-    if not 5 > int(args[1]) > 0:
+    if not 5 > int(args[1]) >= 0:
         return "Rank cannot be more than 4, and less than 0."
 
     old_data = json.loads(open("./permissions.json", "r").read())
