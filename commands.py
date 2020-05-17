@@ -77,7 +77,7 @@ def command_node(args, room, user, bot):
 
 @permission(4)
 def command_setrank(args, room, user, bot):
-    if int(args[1]) > 4 or int(args[1]) < 0:
+    if not 5 > int(args[1]) > 0:
         return "Rank cannot be more than 4, and less than 0."
 
     old_data = json.loads(open("./permissions.json", "r").read())
