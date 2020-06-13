@@ -1,0 +1,19 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    networks:
+      - web
+    env_file:
+      - .env
+    environment:
+      USERNAME: ${USERNAME}
+      PASSWORD: ${PASSWORD}
+      ROOMS: ${ROOMS}
+      WS: ${WS}
+      KEY: ${KEY}
+      AVATAR: ${AVATAR}
+      OWLBOT: ${OWLBOT}
+networks:
+  web:
