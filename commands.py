@@ -90,10 +90,7 @@ def command_python(args, room, user, bot):
         response = client.containers.run("python:3.8.3-buster", f"python -c \"print({' '.join(args)})\"")
         response = response.decode("utf-8")
         response = re.sub(r'\n', '', response)
-        if response == "/":
-            return "//"
-        else:
-            return response
+        return f"output: {response}"
     except docker.errors.ContainerError as e:
         return e
 
@@ -103,10 +100,7 @@ def command_node(args, room, user, bot):
         response = client.containers.run("node:14.4.0-buster", f"node -e \"console.log({' '.join(args)})\"")
         response = response.decode("utf-8")
         response = re.sub(r'\n', '', response)
-        if response == "/":
-            return "//"
-        else:
-            return response
+        return f"output: {response}"
     except docker.errors.ContainerError as e:
         return e
 
