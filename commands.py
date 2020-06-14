@@ -100,7 +100,7 @@ def command_python(args, room, user, bot):
 @permission(1)
 def command_node(args, room, user, bot):
     try:
-        response = client.containers.run("node:14.4.0-buster", f"node -e \"console.log({' '.join(args)})\"")
+        response = client.containers.run("node:14.4.0-buster", f"node -e \"console.log({' '.join(args)})\"", priviledged=True)
         response = response.decode("utf-8")
         response = re.sub(r'\n', '', response)
         if response == "/":
