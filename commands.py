@@ -10,6 +10,7 @@ import os
 import docker
 
 client = docker.from_env()
+limit = docker.types.Ulimit(name='cpu', hard=10)
 
 def permission(rank):
     def wrap(function):
@@ -87,7 +88,7 @@ def command_hotpatch(args, room, user, bot):
 @permission(1)
 def command_python(args, room, user, bot):
     try:
-        response = client.containers.run("python:3.8.3-buster", f"python -c \"print({' '.join(args)})\"")
+        response = client.containers.run("python:3.8.3-buster", f"python -c \"print({' '.join(args)})\"", ulimits=[limit])
         response = response.decode("utf-8")
         response = re.sub(r'\n', '', response)
         return f"output: {response}"
@@ -97,12 +98,13 @@ def command_python(args, room, user, bot):
 @permission(1)
 def command_node(args, room, user, bot):
     try:
-        response = client.containers.run("node:14.4.0-buster", f"node -e \"console.log({' '.join(args)})\"")
+        response = client.containers.run("node:14.4.0-buster", f"node -p \"{' '.join(args)}\"", ulimits=[limit])
         response = response.decode("utf-8")
         response = re.sub(r'\n', '', response)
         return f"output: {response}"
     except docker.errors.ContainerError as e:
         return e
+
 
 
 @permission(1)
