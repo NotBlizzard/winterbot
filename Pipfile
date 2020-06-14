@@ -10,6 +10,7 @@ requests = "*"
 humanize = "*"
 python-dotenv = "*"
 websockets = "*"
+docker = "*"
 
 [requires]
 python_version = "3.8"

@@ -7,7 +7,9 @@ import platform
 import humanize
 import requests
 import os
+import docker
 
+client = docker.from_env()
 
 def permission(rank):
     def wrap(function):
@@ -66,14 +68,6 @@ def command_owo(args, room, user, bot):
     args = re.sub(r'n(?=a|e|i|o|u)', "ny", args)
     return args
 
-
-@permission(4)
-def command_node(args, room, user, bot):
-    node = subprocess.getoutput(f"node -e \"console.log({' '.join(args)})\"")
-    node = re.sub(r'\n', '', node)
-    return node
-
-
 @permission(4)
 def command_setrank(args, room, user, bot):
     if not 5 > int(args[1]) >= 0:
@@ -89,6 +83,32 @@ def command_setrank(args, room, user, bot):
 @permission(4)
 def command_hotpatch(args, room, user, bot):
     return bot.hotpatch(args[0])
+
+@permission(1)
+def command_python(args, room, user, bot):
+    try:
+        response = client.containers.run("python:3.8.3-buster", f"python -c \"print({' '.join(args)})\"")
+        response = response.decode("utf-8")
+        response = re.sub(r'\n', '', response)
+        if response == "/":
+            return "//"
+        else:
+            return response
+    except docker.errors.ContainerError as e:
+        return e
+
+@permission(1)
+def command_node(args, room, user, bot):
+    try:
+        response = client.containers.run("node:14.4.0-buster", f"node -e \"console.log({' '.join(args)})\"")
+        response = response.decode("utf-8")
+        response = re.sub(r'\n', '', response)
+        if response == "/":
+            return "//"
+        else:
+            return response
+    except docker.errors.ContainerError as e:
+        return e
 
 
 @permission(1)
